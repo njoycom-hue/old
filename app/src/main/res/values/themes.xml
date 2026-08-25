@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose owns all in-app theming (see ui/theme/Theme.kt); this base theme only
+         controls the window before Compose takes over and the launch/task-switcher look. -->
+    <style name="Theme.DunoeTokTok" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#FF8A3D</item>
+        <item name="android:windowBackground">#FBF7EF</item>
+    </style>
+</resources>
