@@ -16,6 +16,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val PREVIEW_SECONDS = 5
+
 data class MemoryCardUi(
     val id: Int,
     val icon: String,
@@ -29,6 +31,8 @@ data class MemoryGameUiState(
     val elapsedSeconds: Int = 0,
     val isComplete: Boolean = false,
     val isNewRecord: Boolean = false,
+    val isPreviewing: Boolean = true,
+    val previewSecondsRemaining: Int = PREVIEW_SECONDS,
 )
 
 @HiltViewModel
@@ -44,6 +48,7 @@ class MemoryGameViewModel @Inject constructor(
     private var matchedPairCount = 0
     private var previousBest: Int? = null
     private var timerJob: Job? = null
+    private var previewJob: Job? = null
 
     init {
         startNewGame()
@@ -51,18 +56,38 @@ class MemoryGameViewModel @Inject constructor(
 
     fun startNewGame() {
         timerJob?.cancel()
+        previewJob?.cancel()
         firstFlippedId = null
-        isBoardLocked = false
+        isBoardLocked = true
         matchedPairCount = 0
         previousBest = null
 
+        // All cards start face up so the player can memorize them before the preview ends.
         val cards = (ICONS + ICONS).shuffled()
-            .mapIndexed { index, icon -> MemoryCardUi(id = index, icon = icon) }
+            .mapIndexed { index, icon -> MemoryCardUi(id = index, icon = icon, isFaceUp = true) }
         _uiState.value = MemoryGameUiState(cards = cards)
 
         viewModelScope.launch {
             previousBest = gameRepository.observeBestScore(GameType.MEMORY).first()
         }
+
+        previewJob = viewModelScope.launch {
+            for (remaining in PREVIEW_SECONDS downTo 1) {
+                _uiState.update { it.copy(previewSecondsRemaining = remaining) }
+                delay(1_000)
+            }
+            _uiState.update { state ->
+                state.copy(
+                    isPreviewing = false,
+                    cards = state.cards.map { it.copy(isFaceUp = false) },
+                )
+            }
+            isBoardLocked = false
+            startTimer()
+        }
+    }
+
+    private fun startTimer() {
         timerJob = viewModelScope.launch {
             while (isActive) {
                 delay(1_000)
@@ -74,6 +99,7 @@ class MemoryGameViewModel @Inject constructor(
     fun onCardClick(cardId: Int) {
         if (isBoardLocked) return
         val state = _uiState.value
+        if (state.isPreviewing) return
         val clicked = state.cards.firstOrNull { it.id == cardId } ?: return
         if (clicked.isFaceUp || clicked.isMatched) return
 
@@ -132,6 +158,7 @@ class MemoryGameViewModel @Inject constructor(
 
     override fun onCleared() {
         timerJob?.cancel()
+        previewJob?.cancel()
     }
 
     companion object {

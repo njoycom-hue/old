@@ -41,7 +41,17 @@ fun MemoryGameScreen(onBack: () -> Unit, viewModel: MemoryGameViewModel = hiltVi
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            StatusRow("시도 횟수: ${uiState.moves}", "시간: ${uiState.elapsedSeconds}초")
+            if (uiState.isPreviewing) {
+                Text(
+                    "카드를 잘 기억하세요! ${uiState.previewSecondsRemaining}초 후 시작합니다",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                StatusRow("시도 횟수: ${uiState.moves}", "시간: ${uiState.elapsedSeconds}초")
+            }
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
@@ -52,7 +62,7 @@ fun MemoryGameScreen(onBack: () -> Unit, viewModel: MemoryGameViewModel = hiltVi
                     MemoryCard(
                         icon = card.icon,
                         isRevealed = card.isFaceUp || card.isMatched,
-                        isMatched = card.isMatched,
+                        isClickable = !uiState.isPreviewing && !card.isMatched,
                         onClick = { viewModel.onCardClick(card.id) },
                     )
                 }
@@ -78,14 +88,14 @@ fun MemoryGameScreen(onBack: () -> Unit, viewModel: MemoryGameViewModel = hiltVi
 }
 
 @Composable
-private fun MemoryCard(icon: String, isRevealed: Boolean, isMatched: Boolean, onClick: () -> Unit) {
+private fun MemoryCard(icon: String, isRevealed: Boolean, isClickable: Boolean, onClick: () -> Unit) {
     val background = if (isRevealed) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primary
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(12.dp))
             .background(background)
-            .clickable(enabled = !isMatched, onClick = onClick),
+            .clickable(enabled = isClickable, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         if (isRevealed) {

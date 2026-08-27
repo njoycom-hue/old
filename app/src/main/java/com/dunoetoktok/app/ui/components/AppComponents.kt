@@ -63,9 +63,15 @@ fun AppTopBar(title: String, onBack: (() -> Unit)?) {
 }
 
 @Composable
-fun PrimaryButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun PrimaryButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         contentPadding = PaddingValues(vertical = 16.dp),

@@ -73,12 +73,13 @@ fun SequenceGameScreen(onBack: () -> Unit, viewModel: SequenceGameViewModel = hi
                 }
             }
 
+            val isIdleOrGameOver = uiState.phase == SequencePhase.IDLE || uiState.phase == SequencePhase.GAME_OVER
             val buttonLabel = when (uiState.phase) {
                 SequencePhase.IDLE -> "시작"
                 SequencePhase.GAME_OVER -> "다시 시작"
                 else -> "진행 중..."
             }
-            PrimaryButton(text = buttonLabel, onClick = { viewModel.start() })
+            PrimaryButton(text = buttonLabel, enabled = isIdleOrGameOver, onClick = { viewModel.start() })
         }
     }
 }
