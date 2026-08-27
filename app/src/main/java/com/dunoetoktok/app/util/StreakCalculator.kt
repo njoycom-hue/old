@@ -22,4 +22,18 @@ object StreakCalculator {
         }
         return streak
     }
+
+    /** Longest run of consecutive played days ever, regardless of whether it's still active. */
+    fun longestStreak(playedDates: List<LocalDate>): Int {
+        if (playedDates.isEmpty()) return 0
+        val sorted = playedDates.distinct().sorted()
+
+        var longest = 1
+        var current = 1
+        for (i in 1 until sorted.size) {
+            current = if (sorted[i] == sorted[i - 1].plusDays(1)) current + 1 else 1
+            longest = maxOf(longest, current)
+        }
+        return longest
+    }
 }

@@ -23,4 +23,8 @@ interface GameResultDao {
 
     @Query("SELECT DISTINCT playedAt FROM game_results ORDER BY playedAt DESC")
     fun observeAllPlayedAt(): Flow<List<Long>>
+
+    /** Every result ever recorded — used to derive total XP, games played, and per-game bests together. */
+    @Query("SELECT * FROM game_results")
+    fun observeAllResults(): Flow<List<GameResultEntity>>
 }

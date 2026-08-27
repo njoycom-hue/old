@@ -8,4 +8,5 @@ object Routes {
     const val ODD_WORD_GAME = "game/odd_word"
     const val STATS = "stats"
     const val SETTINGS = "settings"
+    const val ACHIEVEMENTS = "achievements"
 }

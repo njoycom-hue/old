@@ -3,13 +3,17 @@ package com.dunoetoktok.app.ui.games.sequence
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dunoetoktok.app.data.repository.GameRepository
+import com.dunoetoktok.app.model.Achievement
 import com.dunoetoktok.app.model.GameType
+import com.dunoetoktok.app.model.PlayerStats
+import com.dunoetoktok.app.model.findNewlyUnlockedAchievements
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,6 +28,7 @@ data class SequenceGameUiState(
     val message: String = "시작 버튼을 누르면 순서가 나와요",
     val bestRound: Int = 0,
     val isNewRecord: Boolean = false,
+    val newlyUnlockedAchievements: List<Achievement> = emptyList(),
 )
 
 @HiltViewModel
@@ -37,6 +42,7 @@ class SequenceGameViewModel @Inject constructor(
     private val sequence = mutableListOf<Int>()
     private var userProgress = 0
     private var previousBest: Int? = null
+    private var statsBeforeGame: PlayerStats? = null
     private var playbackJob: Job? = null
 
     init {
@@ -50,7 +56,10 @@ class SequenceGameViewModel @Inject constructor(
 
     fun start() {
         sequence.clear()
-        _uiState.update { it.copy(isNewRecord = false) }
+        _uiState.update { it.copy(isNewRecord = false, newlyUnlockedAchievements = emptyList()) }
+        viewModelScope.launch {
+            statsBeforeGame = gameRepository.observePlayerStats().first()
+        }
         nextRound()
     }
 
@@ -120,7 +129,16 @@ class SequenceGameViewModel @Inject constructor(
             )
         }
         if (roundsCleared > 0) {
-            viewModelScope.launch { gameRepository.saveResult(GameType.SEQUENCE, roundsCleared) }
+            viewModelScope.launch {
+                gameRepository.saveResult(GameType.SEQUENCE, roundsCleared)
+                val statsBefore = statsBeforeGame
+                if (statsBefore != null) {
+                    val newlyUnlocked = findNewlyUnlockedAchievements(statsBefore, gameRepository.observePlayerStats().first())
+                    if (newlyUnlocked.isNotEmpty()) {
+                        _uiState.update { it.copy(newlyUnlockedAchievements = newlyUnlocked) }
+                    }
+                }
+            }
         }
     }
 

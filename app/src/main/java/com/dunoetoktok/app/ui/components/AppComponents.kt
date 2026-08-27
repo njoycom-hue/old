@@ -1,5 +1,8 @@
 package com.dunoetoktok.app.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -157,6 +160,41 @@ fun HomeGameCard(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary,
             )
+        }
+    }
+}
+
+@Composable
+fun AchievementUnlockBanner(achievements: List<com.dunoetoktok.app.model.Achievement>, modifier: Modifier = Modifier) {
+    AnimatedVisibility(
+        visible = achievements.isNotEmpty(),
+        enter = scaleIn(initialScale = 0.85f) + fadeIn(),
+        modifier = modifier,
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = com.dunoetoktok.app.ui.theme.GameAccent.Yellow,
+                contentColor = com.dunoetoktok.app.ui.theme.TextPrimary,
+            ),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text("🎉 새 업적 달성!", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                achievements.forEach { achievement ->
+                    Text(
+                        "${achievement.emoji} ${achievement.title}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
         }
     }
 }

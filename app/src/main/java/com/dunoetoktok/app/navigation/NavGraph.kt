@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.dunoetoktok.app.ui.achievements.AchievementsScreen
 import com.dunoetoktok.app.ui.games.math.MathGameScreen
 import com.dunoetoktok.app.ui.games.memory.MemoryGameScreen
 import com.dunoetoktok.app.ui.games.oddword.OddWordGameScreen
@@ -35,6 +36,9 @@ fun NavGraph(navController: NavHostController, settingsViewModel: SettingsViewMo
         }
         composable(Routes.STATS) {
             StatsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.ACHIEVEMENTS) {
+            AchievementsScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(onBack = { navController.popBackStack() }, viewModel = settingsViewModel)

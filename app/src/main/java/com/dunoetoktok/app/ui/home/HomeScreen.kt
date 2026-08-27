@@ -6,20 +6,26 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,12 +48,12 @@ fun HomeScreen(onNavigate: (String) -> Unit, viewModel: HomeViewModel = hiltView
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                "매일 조금씩, 즐겁게 두뇌를 움직여 보세요.\n치매 예방에 도움이 되는 두뇌 게임 4가지를 준비했어요.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+            LevelStreakCard(
+                level = uiState.level.level,
+                progress = uiState.level.progress,
+                xpIntoLevel = uiState.level.xpIntoLevel,
+                xpForNextLevel = uiState.level.xpForNextLevel,
+                currentStreak = uiState.currentStreak,
             )
 
             GameType.entries.chunked(2).forEach { rowGames ->
@@ -70,7 +76,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, viewModel: HomeViewModel = hiltView
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 HomeShortcutCard(
                     icon = Icons.Filled.BarChart,
@@ -79,12 +85,72 @@ fun HomeScreen(onNavigate: (String) -> Unit, viewModel: HomeViewModel = hiltView
                     onClick = { onNavigate(Routes.STATS) },
                 )
                 HomeShortcutCard(
+                    icon = Icons.Filled.EmojiEvents,
+                    label = "업적",
+                    modifier = Modifier.weight(1f),
+                    onClick = { onNavigate(Routes.ACHIEVEMENTS) },
+                )
+                HomeShortcutCard(
                     icon = Icons.Filled.Settings,
                     label = "설정",
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigate(Routes.SETTINGS) },
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun LevelStreakCard(
+    level: Int,
+    progress: Float,
+    xpIntoLevel: Int,
+    xpForNextLevel: Int,
+    currentStreak: Int,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "레벨 $level",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+                if (currentStreak > 0) {
+                    Text(
+                        "🔥 연속 ${currentStreak}일째",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+            LinearProgressIndicator(
+                progress = { progress.coerceIn(0f, 1f) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp)),
+                color = MaterialTheme.colorScheme.onPrimary,
+                trackColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
+            )
+            Text(
+                "다음 레벨까지 $xpIntoLevel / $xpForNextLevel XP",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
         }
     }
 }
@@ -103,15 +169,20 @@ private fun HomeShortcutCard(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
             Text(
                 label,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
+                textAlign = TextAlign.Center,
             )
         }
     }

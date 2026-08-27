@@ -42,4 +42,25 @@ class StreakCalculatorTest {
         val days = listOf(today.minusDays(2), today, today.minusDays(1))
         assertEquals(3, StreakCalculator.currentStreak(days, today))
     }
+
+    @Test
+    fun `longest streak is zero with no history`() {
+        assertEquals(0, StreakCalculator.longestStreak(emptyList()))
+    }
+
+    @Test
+    fun `longest streak finds the best run even if it is not the current one`() {
+        // a 4-day run earlier, then a break, then a shorter 2-day run
+        val days = listOf(
+            today.minusDays(20), today.minusDays(19), today.minusDays(18), today.minusDays(17),
+            today.minusDays(1), today,
+        )
+        assertEquals(4, StreakCalculator.longestStreak(days))
+    }
+
+    @Test
+    fun `longest streak ignores duplicate dates`() {
+        val days = listOf(today, today, today.minusDays(1))
+        assertEquals(2, StreakCalculator.longestStreak(days))
+    }
 }

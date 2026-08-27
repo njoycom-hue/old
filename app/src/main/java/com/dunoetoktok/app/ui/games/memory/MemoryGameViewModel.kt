@@ -3,7 +3,10 @@ package com.dunoetoktok.app.ui.games.memory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dunoetoktok.app.data.repository.GameRepository
+import com.dunoetoktok.app.model.Achievement
 import com.dunoetoktok.app.model.GameType
+import com.dunoetoktok.app.model.PlayerStats
+import com.dunoetoktok.app.model.findNewlyUnlockedAchievements
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -33,6 +36,7 @@ data class MemoryGameUiState(
     val isNewRecord: Boolean = false,
     val isPreviewing: Boolean = true,
     val previewSecondsRemaining: Int = PREVIEW_SECONDS,
+    val newlyUnlockedAchievements: List<Achievement> = emptyList(),
 )
 
 @HiltViewModel
@@ -47,6 +51,7 @@ class MemoryGameViewModel @Inject constructor(
     private var isBoardLocked = false
     private var matchedPairCount = 0
     private var previousBest: Int? = null
+    private var statsBeforeGame: PlayerStats? = null
     private var timerJob: Job? = null
     private var previewJob: Job? = null
 
@@ -69,6 +74,7 @@ class MemoryGameViewModel @Inject constructor(
 
         viewModelScope.launch {
             previousBest = gameRepository.observeBestScore(GameType.MEMORY).first()
+            statsBeforeGame = gameRepository.observePlayerStats().first()
         }
 
         previewJob = viewModelScope.launch {
@@ -153,7 +159,16 @@ class MemoryGameViewModel @Inject constructor(
         val moves = _uiState.value.moves
         val isRecord = previousBest?.let { moves < it } ?: true
         _uiState.update { it.copy(isComplete = true, isNewRecord = isRecord) }
-        viewModelScope.launch { gameRepository.saveResult(GameType.MEMORY, moves) }
+        viewModelScope.launch {
+            gameRepository.saveResult(GameType.MEMORY, moves)
+            val statsBefore = statsBeforeGame
+            if (statsBefore != null) {
+                val newlyUnlocked = findNewlyUnlockedAchievements(statsBefore, gameRepository.observePlayerStats().first())
+                if (newlyUnlocked.isNotEmpty()) {
+                    _uiState.update { it.copy(newlyUnlockedAchievements = newlyUnlocked) }
+                }
+            }
+        }
     }
 
     override fun onCleared() {

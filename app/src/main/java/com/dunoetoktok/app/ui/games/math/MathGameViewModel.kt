@@ -3,7 +3,10 @@ package com.dunoetoktok.app.ui.games.math
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dunoetoktok.app.data.repository.GameRepository
+import com.dunoetoktok.app.model.Achievement
 import com.dunoetoktok.app.model.GameType
+import com.dunoetoktok.app.model.PlayerStats
+import com.dunoetoktok.app.model.findNewlyUnlockedAchievements
 import com.dunoetoktok.app.util.MathQuestion
 import com.dunoetoktok.app.util.MathQuestionGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,14 +19,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val COMBO_THRESHOLD = 3
+
 data class MathGameUiState(
     val questionIndex: Int = 0,
     val question: MathQuestion? = null,
     val correctCount: Int = 0,
+    val answerStreak: Int = 0,
     val selectedChoice: Int? = null,
     val resultMessage: String = "",
     val isComplete: Boolean = false,
     val isNewRecord: Boolean = false,
+    val newlyUnlockedAchievements: List<Achievement> = emptyList(),
 )
 
 @HiltViewModel
@@ -35,6 +42,7 @@ class MathGameViewModel @Inject constructor(
     val uiState: StateFlow<MathGameUiState> = _uiState.asStateFlow()
 
     private var previousBest: Int? = null
+    private var statsBeforeGame: PlayerStats? = null
     private var isLocked = false
 
     init {
@@ -46,6 +54,7 @@ class MathGameViewModel @Inject constructor(
         _uiState.value = MathGameUiState(question = MathQuestionGenerator.generate())
         viewModelScope.launch {
             previousBest = gameRepository.observeBestScore(GameType.MATH).first()
+            statsBeforeGame = gameRepository.observePlayerStats().first()
         }
     }
 
@@ -56,11 +65,17 @@ class MathGameViewModel @Inject constructor(
         isLocked = true
 
         val isCorrect = choice == question.answer
+        val newStreak = if (isCorrect) state.answerStreak + 1 else 0
         _uiState.update {
             it.copy(
                 selectedChoice = choice,
                 correctCount = it.correctCount + if (isCorrect) 1 else 0,
-                resultMessage = if (isCorrect) "정답이에요!" else "아쉬워요. 정답은 ${question.answer}이에요.",
+                answerStreak = newStreak,
+                resultMessage = when {
+                    !isCorrect -> "아쉬워요. 정답은 ${question.answer}이에요."
+                    newStreak >= COMBO_THRESHOLD -> "정답이에요! 🔥 ${newStreak}연속 정답!"
+                    else -> "정답이에요!"
+                },
             )
         }
 
@@ -76,7 +91,16 @@ class MathGameViewModel @Inject constructor(
         if (nextIndex >= TOTAL_QUESTIONS) {
             val isRecord = previousBest?.let { state.correctCount > it } ?: (state.correctCount > 0)
             _uiState.update { it.copy(isComplete = true, isNewRecord = isRecord) }
-            viewModelScope.launch { gameRepository.saveResult(GameType.MATH, state.correctCount) }
+            viewModelScope.launch {
+                gameRepository.saveResult(GameType.MATH, state.correctCount)
+                val statsBefore = statsBeforeGame
+                if (statsBefore != null) {
+                    val newlyUnlocked = findNewlyUnlockedAchievements(statsBefore, gameRepository.observePlayerStats().first())
+                    if (newlyUnlocked.isNotEmpty()) {
+                        _uiState.update { it.copy(newlyUnlockedAchievements = newlyUnlocked) }
+                    }
+                }
+            }
         } else {
             isLocked = false
             _uiState.update {

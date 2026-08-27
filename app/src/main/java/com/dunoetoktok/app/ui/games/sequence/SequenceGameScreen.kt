@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dunoetoktok.app.ui.components.AchievementUnlockBanner
 import com.dunoetoktok.app.ui.components.GameScreenScaffold
 import com.dunoetoktok.app.ui.components.PrimaryButton
 import com.dunoetoktok.app.ui.components.StatusRow
@@ -71,6 +72,10 @@ fun SequenceGameScreen(onBack: () -> Unit, viewModel: SequenceGameViewModel = hi
                         onClick = { viewModel.onColorClick(index) },
                     )
                 }
+            }
+
+            if (uiState.phase == SequencePhase.GAME_OVER) {
+                AchievementUnlockBanner(uiState.newlyUnlockedAchievements)
             }
 
             val isIdleOrGameOver = uiState.phase == SequencePhase.IDLE || uiState.phase == SequencePhase.GAME_OVER
