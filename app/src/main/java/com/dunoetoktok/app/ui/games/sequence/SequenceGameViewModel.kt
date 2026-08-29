@@ -21,6 +21,14 @@ import kotlin.random.Random
 
 enum class SequencePhase { IDLE, BUSY, WAITING_INPUT, GAME_OVER }
 
+// Slow and clear on purpose: this game is aimed at older players, so the playback
+// needs enough time per light (and a beat before it starts) to actually be followable.
+private const val PRE_ROUND_PAUSE_MS = 700L
+private const val LIGHT_ON_MS = 700L
+private const val LIGHT_OFF_GAP_MS = 350L
+private const val TAP_FLASH_MS = 300L
+private const val ROUND_SUCCESS_PAUSE_MS = 900L
+
 data class SequenceGameUiState(
     val phase: SequencePhase = SequencePhase.IDLE,
     val round: Int = 0,
@@ -79,7 +87,7 @@ class SequenceGameViewModel @Inject constructor(
                 it.copy(phase = SequencePhase.BUSY, message = "성공! 다음 라운드로 이어집니다")
             }
             viewModelScope.launch {
-                delay(900)
+                delay(ROUND_SUCCESS_PAUSE_MS)
                 nextRound()
             }
         }
@@ -93,11 +101,12 @@ class SequenceGameViewModel @Inject constructor(
         }
         playbackJob?.cancel()
         playbackJob = viewModelScope.launch {
+            delay(PRE_ROUND_PAUSE_MS)
             for (colorIndex in sequence) {
                 _uiState.update { it.copy(litIndex = colorIndex) }
-                delay(500)
+                delay(LIGHT_ON_MS)
                 _uiState.update { it.copy(litIndex = null) }
-                delay(200)
+                delay(LIGHT_OFF_GAP_MS)
             }
             _uiState.update {
                 it.copy(phase = SequencePhase.WAITING_INPUT, message = "이제 같은 순서로 눌러보세요")
@@ -108,7 +117,7 @@ class SequenceGameViewModel @Inject constructor(
     private fun flashBriefly(colorIndex: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(litIndex = colorIndex) }
-            delay(250)
+            delay(TAP_FLASH_MS)
             _uiState.update { it.copy(litIndex = null) }
         }
     }

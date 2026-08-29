@@ -1,6 +1,8 @@
 package com.dunoetoktok.app.ui.games.sequence
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,8 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -91,12 +93,18 @@ fun SequenceGameScreen(onBack: () -> Unit, viewModel: SequenceGameViewModel = hi
 
 @Composable
 private fun SequenceColorButton(color: Color, isLit: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    val scale by animateFloatAsState(targetValue = if (isLit) 1.08f else 1f, label = "sequence-lit-scale")
     Box(
         modifier = Modifier
             .aspectRatio(1f)
+            .scale(scale)
             .clip(RoundedCornerShape(16.dp))
-            .background(color)
-            .alpha(if (isLit) 1f else 0.45f)
+            .background(if (isLit) color else color.copy(alpha = 0.3f))
+            .border(
+                width = if (isLit) 6.dp else 0.dp,
+                color = Color.White,
+                shape = RoundedCornerShape(16.dp),
+            )
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {}
