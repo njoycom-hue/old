@@ -20,7 +20,7 @@ enum class GameType(
         emoji = "🃏",
         title = "기억력 카드 짝맞추기",
         description = "같은 그림 카드를 찾아보세요",
-        lowerScoreIsBetter = true,
+        lowerScoreIsBetter = false,
     ),
     SEQUENCE(
         storageKey = "sequence",
@@ -53,9 +53,9 @@ enum class GameType(
     }
 }
 
-/** Renders a raw score the way this game's unit is meant to read, e.g. "7회 만에 완료", "3라운드", "8 / 10". */
+/** Renders a raw score the way this game's unit is meant to read, e.g. "레벨 3까지 완료", "3라운드", "8 / 10". */
 fun GameType.formatScoreText(score: Int): String = when (this) {
-    GameType.MEMORY -> "${score}회 만에 완료"
+    GameType.MEMORY -> "레벨 ${score}까지 완료"
     GameType.SEQUENCE -> "${score}라운드"
     GameType.MATH, GameType.ODD_WORD -> "$score / 10"
 }

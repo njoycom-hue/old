@@ -36,10 +36,10 @@ class AchievementTest {
     }
 
     @Test
-    fun `memory ace requires a low move count, not a high one`() {
+    fun `memory ace requires clearing all levels, not just an early one`() {
         val achievement = ACHIEVEMENTS.first { it.id == "memory_ace" }
-        assertTrue(achievement.isUnlocked(PlayerStats(bestScores = mapOf(GameType.MEMORY to 6))))
-        assertFalse(achievement.isUnlocked(PlayerStats(bestScores = mapOf(GameType.MEMORY to 20))))
+        assertTrue(achievement.isUnlocked(PlayerStats(bestScores = mapOf(GameType.MEMORY to 5))))
+        assertFalse(achievement.isUnlocked(PlayerStats(bestScores = mapOf(GameType.MEMORY to 3))))
     }
 
     @Test

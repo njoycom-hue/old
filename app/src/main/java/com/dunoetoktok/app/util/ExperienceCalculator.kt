@@ -16,7 +16,7 @@ object ExperienceCalculator {
     private const val LEVEL_XP_GROWTH = 1.15
 
     fun xpFor(gameType: GameType, score: Int): Int = when (gameType) {
-        GameType.MEMORY -> (34 - score).coerceIn(8, 26)
+        GameType.MEMORY -> 10 + score * 12 // score = highest level reached, so more xp for going further
         GameType.SEQUENCE -> 8 + score * 6
         GameType.MATH, GameType.ODD_WORD -> 6 + score * 6
     }

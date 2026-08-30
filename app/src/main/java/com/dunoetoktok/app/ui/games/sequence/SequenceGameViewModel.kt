@@ -23,11 +23,23 @@ enum class SequencePhase { IDLE, BUSY, WAITING_INPUT, GAME_OVER }
 
 // Slow and clear on purpose: this game is aimed at older players, so the playback
 // needs enough time per light (and a beat before it starts) to actually be followable.
+// Speed then ramps up gradually round by round (classic Simon difficulty), but never
+// below a floor that stays fair for the target audience.
 private const val PRE_ROUND_PAUSE_MS = 700L
-private const val LIGHT_ON_MS = 700L
-private const val LIGHT_OFF_GAP_MS = 350L
+private const val LIGHT_ON_START_MS = 700L
+private const val LIGHT_ON_MIN_MS = 350L
+private const val LIGHT_ON_STEP_MS = 20L
+private const val LIGHT_OFF_GAP_START_MS = 350L
+private const val LIGHT_OFF_GAP_MIN_MS = 180L
+private const val LIGHT_OFF_GAP_STEP_MS = 10L
 private const val TAP_FLASH_MS = 300L
 private const val ROUND_SUCCESS_PAUSE_MS = 900L
+
+private fun lightOnMsForRound(round: Int): Long =
+    (LIGHT_ON_START_MS - (round - 1) * LIGHT_ON_STEP_MS).coerceAtLeast(LIGHT_ON_MIN_MS)
+
+private fun lightOffGapMsForRound(round: Int): Long =
+    (LIGHT_OFF_GAP_START_MS - (round - 1) * LIGHT_OFF_GAP_STEP_MS).coerceAtLeast(LIGHT_OFF_GAP_MIN_MS)
 
 data class SequenceGameUiState(
     val phase: SequencePhase = SequencePhase.IDLE,
@@ -96,17 +108,20 @@ class SequenceGameViewModel @Inject constructor(
     private fun nextRound() {
         sequence.add(Random.nextInt(4))
         userProgress = 0
+        val round = sequence.size
+        val lightOnMs = lightOnMsForRound(round)
+        val lightOffGapMs = lightOffGapMsForRound(round)
         _uiState.update {
-            it.copy(phase = SequencePhase.BUSY, round = sequence.size, message = "순서를 잘 보세요...")
+            it.copy(phase = SequencePhase.BUSY, round = round, message = "순서를 잘 보세요...")
         }
         playbackJob?.cancel()
         playbackJob = viewModelScope.launch {
             delay(PRE_ROUND_PAUSE_MS)
             for (colorIndex in sequence) {
                 _uiState.update { it.copy(litIndex = colorIndex) }
-                delay(LIGHT_ON_MS)
+                delay(lightOnMs)
                 _uiState.update { it.copy(litIndex = null) }
-                delay(LIGHT_OFF_GAP_MS)
+                delay(lightOffGapMs)
             }
             _uiState.update {
                 it.copy(phase = SequencePhase.WAITING_INPUT, message = "이제 같은 순서로 눌러보세요")

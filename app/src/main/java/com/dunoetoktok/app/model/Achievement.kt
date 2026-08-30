@@ -58,8 +58,8 @@ val ACHIEVEMENTS: List<Achievement> = listOf(
         id = "memory_ace",
         emoji = "🃏",
         title = "기억력 에이스",
-        description = "기억력 카드 짝맞추기를 8회 이하로 완료했어요",
-        isUnlocked = { (it.bestScores[GameType.MEMORY] ?: Int.MAX_VALUE) <= 8 },
+        description = "기억력 카드 짝맞추기의 모든 레벨을 클리어했어요",
+        isUnlocked = { (it.bestScores[GameType.MEMORY] ?: 0) >= 5 },
     ),
     Achievement(
         id = "sequence_master",

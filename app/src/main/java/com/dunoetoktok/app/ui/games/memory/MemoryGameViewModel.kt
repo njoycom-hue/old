@@ -19,7 +19,20 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val PREVIEW_SECONDS = 5
+/** How many increasingly harder grids make up one full play-through. */
+const val MEMORY_LEVEL_COUNT = 5
+
+private const val LEVEL_TRANSITION_PAUSE_MS = 1_500L
+
+/** One more pair per level, capped at [MEMORY_LEVEL_COUNT] levels (level 1 = 6 pairs, level 5 = 10 pairs). */
+private fun pairsForLevel(level: Int): Int = 5 + level.coerceIn(1, MEMORY_LEVEL_COUNT)
+
+/** Preview time shrinks slowly — every two levels — so it stays fair for older players. */
+private fun previewSecondsForLevel(level: Int): Int = when {
+    level <= 2 -> 5
+    level <= 4 -> 4
+    else -> 3
+}
 
 data class MemoryCardUi(
     val id: Int,
@@ -29,13 +42,15 @@ data class MemoryCardUi(
 )
 
 data class MemoryGameUiState(
+    val level: Int = 1,
     val cards: List<MemoryCardUi> = emptyList(),
     val moves: Int = 0,
     val elapsedSeconds: Int = 0,
+    val isLevelComplete: Boolean = false,
     val isComplete: Boolean = false,
     val isNewRecord: Boolean = false,
     val isPreviewing: Boolean = true,
-    val previewSecondsRemaining: Int = PREVIEW_SECONDS,
+    val previewSecondsRemaining: Int = previewSecondsForLevel(1),
     val newlyUnlockedAchievements: List<Achievement> = emptyList(),
 )
 
@@ -60,25 +75,44 @@ class MemoryGameViewModel @Inject constructor(
     }
 
     fun startNewGame() {
-        timerJob?.cancel()
-        previewJob?.cancel()
-        firstFlippedId = null
-        isBoardLocked = true
-        matchedPairCount = 0
         previousBest = null
-
-        // All cards start face up so the player can memorize them before the preview ends.
-        val cards = (ICONS + ICONS).shuffled()
-            .mapIndexed { index, icon -> MemoryCardUi(id = index, icon = icon, isFaceUp = true) }
-        _uiState.value = MemoryGameUiState(cards = cards)
+        statsBeforeGame = null
+        _uiState.value = MemoryGameUiState()
 
         viewModelScope.launch {
             previousBest = gameRepository.observeBestScore(GameType.MEMORY).first()
             statsBeforeGame = gameRepository.observePlayerStats().first()
         }
 
+        startLevel(level = 1)
+    }
+
+    private fun startLevel(level: Int) {
+        timerJob?.cancel()
+        previewJob?.cancel()
+        firstFlippedId = null
+        isBoardLocked = true
+        matchedPairCount = 0
+
+        val icons = ICONS.take(pairsForLevel(level))
+        // All cards start face up so the player can memorize them before the preview ends.
+        val cards = (icons + icons).shuffled()
+            .mapIndexed { index, icon -> MemoryCardUi(id = index, icon = icon, isFaceUp = true) }
+        val previewSeconds = previewSecondsForLevel(level)
+
+        _uiState.update {
+            it.copy(
+                level = level,
+                cards = cards,
+                moves = 0,
+                isLevelComplete = false,
+                isPreviewing = true,
+                previewSecondsRemaining = previewSeconds,
+            )
+        }
+
         previewJob = viewModelScope.launch {
-            for (remaining in PREVIEW_SECONDS downTo 1) {
+            for (remaining in previewSeconds downTo 1) {
                 _uiState.update { it.copy(previewSecondsRemaining = remaining) }
                 delay(1_000)
             }
@@ -105,7 +139,7 @@ class MemoryGameViewModel @Inject constructor(
     fun onCardClick(cardId: Int) {
         if (isBoardLocked) return
         val state = _uiState.value
-        if (state.isPreviewing) return
+        if (state.isPreviewing || state.isLevelComplete || state.isComplete) return
         val clicked = state.cards.firstOrNull { it.id == cardId } ?: return
         if (clicked.isFaceUp || clicked.isMatched) return
 
@@ -126,7 +160,9 @@ class MemoryGameViewModel @Inject constructor(
             matchedPairCount++
             firstFlippedId = null
             isBoardLocked = false
-            if (matchedPairCount == ICONS.size) completeGame()
+            if (matchedPairCount == pairsForLevel(state.level)) {
+                onLevelCleared(state.level)
+            }
         } else {
             viewModelScope.launch {
                 delay(700)
@@ -134,6 +170,19 @@ class MemoryGameViewModel @Inject constructor(
                 setFaceUp(cardId, false)
                 firstFlippedId = null
                 isBoardLocked = false
+            }
+        }
+    }
+
+    private fun onLevelCleared(level: Int) {
+        timerJob?.cancel()
+        if (level >= MEMORY_LEVEL_COUNT) {
+            completeSession(level)
+        } else {
+            _uiState.update { it.copy(isLevelComplete = true) }
+            viewModelScope.launch {
+                delay(LEVEL_TRANSITION_PAUSE_MS)
+                startLevel(level + 1)
             }
         }
     }
@@ -154,13 +203,11 @@ class MemoryGameViewModel @Inject constructor(
         }
     }
 
-    private fun completeGame() {
-        timerJob?.cancel()
-        val moves = _uiState.value.moves
-        val isRecord = previousBest?.let { moves < it } ?: true
+    private fun completeSession(finalLevel: Int) {
+        val isRecord = previousBest?.let { finalLevel > it } ?: true
         _uiState.update { it.copy(isComplete = true, isNewRecord = isRecord) }
         viewModelScope.launch {
-            gameRepository.saveResult(GameType.MEMORY, moves)
+            gameRepository.saveResult(GameType.MEMORY, finalLevel)
             val statsBefore = statsBeforeGame
             if (statsBefore != null) {
                 val newlyUnlocked = findNewlyUnlockedAchievements(statsBefore, gameRepository.observePlayerStats().first())
@@ -177,6 +224,6 @@ class MemoryGameViewModel @Inject constructor(
     }
 
     companion object {
-        private val ICONS = listOf("🍎", "🍌", "🍇", "🍉", "🐶", "🐱")
+        private val ICONS = listOf("🍎", "🍌", "🍇", "🍉", "🐶", "🐱", "🐻", "🐰", "🍊", "🍓")
     }
 }

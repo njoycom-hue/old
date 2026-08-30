@@ -42,20 +42,28 @@ fun MemoryGameScreen(onBack: () -> Unit, viewModel: MemoryGameViewModel = hiltVi
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            if (uiState.isPreviewing) {
-                Text(
+            StatusRow("레벨 ${uiState.level} / $MEMORY_LEVEL_COUNT", "시도 횟수: ${uiState.moves}")
+
+            when {
+                uiState.isPreviewing -> Text(
                     "카드를 잘 기억하세요! ${uiState.previewSecondsRemaining}초 후 시작합니다",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.secondary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
-            } else {
-                StatusRow("시도 횟수: ${uiState.moves}", "시간: ${uiState.elapsedSeconds}초")
+                uiState.isLevelComplete -> Text(
+                    "레벨 ${uiState.level} 완료! 다음 레벨로 이어집니다 🎉",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
+                modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -72,9 +80,9 @@ fun MemoryGameScreen(onBack: () -> Unit, viewModel: MemoryGameViewModel = hiltVi
             if (uiState.isComplete) {
                 Text(
                     if (uiState.isNewRecord) {
-                        "축하합니다! ${uiState.moves}회 만에 완료했어요. 새로운 최고 기록!"
+                        "축하합니다! 모든 레벨을 완료했어요! 새로운 최고 기록!"
                     } else {
-                        "잘하셨어요! ${uiState.moves}회 만에 완료했어요."
+                        "수고하셨어요! 모든 레벨을 완료했어요!"
                     },
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.secondary,
