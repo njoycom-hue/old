@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dunoetoktok.app.ui.components.AchievementUnlockBanner
+import com.dunoetoktok.app.ui.components.CelebrationStamp
 import com.dunoetoktok.app.ui.components.GameScreenScaffold
 import com.dunoetoktok.app.ui.components.PrimaryButton
 import com.dunoetoktok.app.ui.components.StatusRow
@@ -78,6 +79,7 @@ fun MemoryGameScreen(onBack: () -> Unit, viewModel: MemoryGameViewModel = hiltVi
             }
 
             if (uiState.isComplete) {
+                CelebrationStamp(visible = uiState.isNewRecord, modifier = Modifier.fillMaxWidth())
                 Text(
                     if (uiState.isNewRecord) {
                         "축하합니다! 모든 레벨을 완료했어요! 새로운 최고 기록!"

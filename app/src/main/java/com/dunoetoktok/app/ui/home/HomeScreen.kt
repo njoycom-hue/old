@@ -1,6 +1,8 @@
 package com.dunoetoktok.app.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +26,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,6 +39,7 @@ import com.dunoetoktok.app.model.formatBestScoreText
 import com.dunoetoktok.app.navigation.Routes
 import com.dunoetoktok.app.ui.components.AppTopBar
 import com.dunoetoktok.app.ui.components.HomeGameCard
+import com.dunoetoktok.app.ui.theme.BrandGradient
 
 @Composable
 fun HomeScreen(onNavigate: (String) -> Unit, viewModel: HomeViewModel = hiltViewModel()) {
@@ -63,9 +68,7 @@ fun HomeScreen(onNavigate: (String) -> Unit, viewModel: HomeViewModel = hiltView
                 ) {
                     rowGames.forEach { gameType ->
                         HomeGameCard(
-                            emoji = gameType.emoji,
-                            title = gameType.title,
-                            description = gameType.description,
+                            gameType = gameType,
                             bestScoreText = gameType.formatBestScoreText(uiState.bestScores[gameType]),
                             modifier = Modifier.weight(1f),
                             onClick = { onNavigate(gameType.route) },
@@ -109,9 +112,13 @@ private fun LevelStreakCard(
     xpForNextLevel: Int,
     currentStreak: Int,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+    val shape = RoundedCornerShape(24.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 8.dp, shape = shape, ambientColor = Color.Black.copy(alpha = 0.25f))
+            .clip(shape)
+            .background(BrandGradient),
     ) {
         Column(
             modifier = Modifier
@@ -165,9 +172,11 @@ private fun HomeShortcutCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
             modifier = Modifier

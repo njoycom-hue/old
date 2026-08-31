@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dunoetoktok.app.ui.components.AchievementUnlockBanner
+import com.dunoetoktok.app.ui.components.CelebrationStamp
 import com.dunoetoktok.app.ui.components.GameScreenScaffold
 import com.dunoetoktok.app.ui.components.PrimaryButton
 import com.dunoetoktok.app.ui.components.StatusRow
@@ -77,6 +78,7 @@ fun SequenceGameScreen(onBack: () -> Unit, viewModel: SequenceGameViewModel = hi
             }
 
             if (uiState.phase == SequencePhase.GAME_OVER) {
+                CelebrationStamp(visible = uiState.isNewRecord, modifier = Modifier.fillMaxWidth())
                 AchievementUnlockBanner(uiState.newlyUnlockedAchievements)
             }
 

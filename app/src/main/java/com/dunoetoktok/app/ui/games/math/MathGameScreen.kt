@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dunoetoktok.app.ui.components.AchievementUnlockBanner
+import com.dunoetoktok.app.ui.components.CelebrationStamp
 import com.dunoetoktok.app.ui.components.ChoiceButton
 import com.dunoetoktok.app.ui.components.ChoiceState
 import com.dunoetoktok.app.ui.components.GameScreenScaffold
@@ -39,6 +40,7 @@ fun MathGameScreen(onBack: () -> Unit, viewModel: MathGameViewModel = hiltViewMo
             )
 
             if (uiState.isComplete) {
+                CelebrationStamp(visible = uiState.isNewRecord, modifier = Modifier.fillMaxWidth())
                 Text(
                     "완료! ${uiState.correctCount} / ${MathGameViewModel.TOTAL_QUESTIONS}",
                     style = MaterialTheme.typography.headlineSmall,
